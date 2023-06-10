@@ -135,7 +135,7 @@ class Synchronization {
     }
 
     async getDispatchOrMailInfo() {
-        await this.goto(this.PAGE,`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
+        await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
         this.SUCCESS = true;
         await new Promise(r => setTimeout(r, 2000));
         const $ = cheerio.load( await this.PAGE.evaluate(()=>{
@@ -207,25 +207,19 @@ class Synchronization {
     }
 
     async openDispatch(page, dispatchId) {
-        await this.goto(page, `https://jxoa.jxt189.com/jascx/CommonForm/DispatchView.aspx?formId=${dispatchId}`)
+        await page.goto(`https://jxoa.jxt189.com/jascx/CommonForm/DispatchView.aspx?formId=${dispatchId}`)
         await this.PAGE.on('dialog', async dialog => {
             await dialog.accept();
         })
         await new Promise(r => setTimeout(r, 2000));
     }
     async openMail(page, mailID) {
-        await this.goto(page,`https://jxoa.jxt189.com/jascx/InternalMail/View.aspx?mailId=${mailID}`)
+        await page.goto(`https://jxoa.jxt189.com/jascx/InternalMail/View.aspx?mailId=${mailID}`)
         await new Promise(r => setTimeout(r, 2000));
-    }
-    async goto(page, link) {
-        return page.evaluate((link) => {
-            location.href = link;
-        }, link);
     }
 
     async downloadDispatchFile(page, dispatchId, dispatchDate, dispatchName ) {
-        //page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoad.aspx?formId=DownLoadAll.aspx?formId=${dispatchId}","${dispatchDate}${dispatchName}.zip")`)
-        await this.goto(page, `https://jxoa.jxt189.com/jascx/CommonForm/DownLoadAll.aspx?formId=${dispatchId}`)
+        page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoadALL.aspx?formId=${dispatchId}","${dispatchDate}${dispatchName}.zip")`)
         console.log("正在下载文件："+dispatchName)
         await new Promise(r => setTimeout(r, 3000));
     }
