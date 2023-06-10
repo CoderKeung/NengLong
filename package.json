@@ -1,0 +1,15 @@
+{
+  "name": "nenglong",
+  "version": "1.0.0",
+  "description": "遂川OA同步服务",
+  "main": "app.js",
+  "author": "CoderKeung",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "puppeteer": "^20.5.0",
+    "tesseract.js": "^4.1.0"
+  }
+}
