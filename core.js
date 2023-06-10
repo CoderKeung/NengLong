@@ -57,8 +57,9 @@ class Synchronization {
 
     async login() {
         await this.createBrowser();
+        console.log("打开浏览器……等待15s……")
         const loginTimer = setInterval(async ()=>{
-            console.log("执行！！")
+            console.log("打开页面……")
             this.ValidateCode = "";
             await this.PAGE.goto(this.MainUrl,{
                 waitUntil: 'networkidle0'
@@ -66,7 +67,7 @@ class Synchronization {
             await this.identificationVerificationCode();
             do {
                 await new Promise(r => setTimeout(r, 500));
-                console.log("等待")
+                console.log("等待0.5ms……")
             } while (this.ValidateCode === "")
             this.inputInfo().then(async ()=>{
                 if (this.SUCCESS) {
@@ -74,10 +75,12 @@ class Synchronization {
                     await this.getDispatchOrMailInfo().then(async ()=>{
                         this.dispatchOrMailInfoMain();
                         await this.downloadAttachmentFile();
-                        this.PAGE.close().then((pageClose)=>{
-                            console.log(pageClose)
+                        this.PAGE.close().then(()=>{
+                            console.log("关闭页面")
                         });
-                        await this.BROWSER.close();
+                        this.BROWSER.close().then(()=>{
+                            console.log("关闭浏览器")
+                        });
                     });
                 }
             });
@@ -89,7 +92,7 @@ class Synchronization {
         await this.PAGE.type('#txt_Password',this.PASSWORD);
         await this.PAGE.type('#txt_ValidateCode', this.ValidateCode);
         await this.PAGE.waitForSelector("#link_MessageAlertNewLink",1000).then(()=>{
-            console.log("登录成功")
+            console.log("登录成功!")
             this.SUCCESS = true;
         })
     }
