@@ -43,7 +43,7 @@ class Synchronization {
 
     async createBrowser(){
         this.BROWSER = await puppeteer.launch({
-            headless: false,
+            headless: true,
             args: ['--use-gl=egl','--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
             defaultViewport: { width: 1920, height: 1080},
         });
