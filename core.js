@@ -68,26 +68,27 @@ class Synchronization {
                 await new Promise(r => setTimeout(r, 500));
                 console.log("等待")
             } while (this.ValidateCode === "")
-            await this.PAGE.waitForSelector('#txt_ValidateCode')
-            await this.inputInfo();
-            if (this.SUCCESS) {
-                clearInterval(loginTimer)
-                await this.getDispatchOrMailInfo().then(async ()=>{
-                    this.dispatchOrMailInfoMain();
-                    await this.downloadAttachmentFile();
-                    await this.PAGE.close();
-                    await this.BROWSER.close();
-                });
-            }
-        }, 10000)
+            this.inputInfo().then(async ()=>{
+                if (this.SUCCESS) {
+                    clearInterval(loginTimer)
+                    await this.getDispatchOrMailInfo().then(async ()=>{
+                        this.dispatchOrMailInfoMain();
+                        await this.downloadAttachmentFile();
+                        await this.PAGE.close();
+                        await this.BROWSER.close();
+                    });
+                }
+            });
+        }, 13000)
     }
 
     async inputInfo(){
+        await this.PAGE.waitForSelector('#txt_ValidateCode')
         await this.PAGE.type('#txt_Account_Input',this.ACCOUNT);
         await this.PAGE.type('#txt_Password',this.PASSWORD);
         await this.PAGE.type('#txt_ValidateCode', this.ValidateCode);
         await new Promise(r => setTimeout(r, 1000));
-        this.PAGE.waitForSelector("#link_MessageAlertNewLink",1000).then(()=>{
+        await this.PAGE.waitForSelector("#link_MessageAlertNewLink",1000).then(()=>{
             console.log("登录成功")
             this.SUCCESS = true;
         })
