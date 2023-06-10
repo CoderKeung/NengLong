@@ -79,15 +79,13 @@ class Synchronization {
                     });
                 }
             });
-        }, 13000)
+        }, 10000)
     }
 
     async inputInfo(){
-        await this.PAGE.waitForSelector('#txt_ValidateCode')
         await this.PAGE.type('#txt_Account_Input',this.ACCOUNT);
         await this.PAGE.type('#txt_Password',this.PASSWORD);
         await this.PAGE.type('#txt_ValidateCode', this.ValidateCode);
-        await new Promise(r => setTimeout(r, 1000));
         await this.PAGE.waitForSelector("#link_MessageAlertNewLink",1000).then(()=>{
             console.log("登录成功")
             this.SUCCESS = true;
