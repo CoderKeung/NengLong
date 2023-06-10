@@ -222,7 +222,7 @@ class Synchronization {
         page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoadALL.aspx?formId=${dispatchId}","1.zip")`)
         console.log("正在下载文件："+dispatchName)
         await new Promise(r => setTimeout(r, 3000));
-        fs.rename(path.join(__dirname, "files/1.zip"), path.join(__dirname, `files/${dispatchDate}${dispatchName}.zip`), (err)=>{ throw err})
+        fs.rename(path.join(__dirname, "files/1.zip"), path.join(__dirname, `files/${dispatchDate}${dispatchName}.zip`), ()=>{})
     }
 
     async downloadMailFile(page, mailDate, mailName){
