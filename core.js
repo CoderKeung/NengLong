@@ -191,6 +191,8 @@ class Synchronization {
         } else {
             if (this.NewDispatchStartKey !== -1) {
                 this.updateDispatchOrMailInfoToJsonFile();
+            } else {
+                console.log("不需要更新！")
             }
         }
     }
