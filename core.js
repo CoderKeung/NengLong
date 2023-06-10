@@ -43,7 +43,7 @@ class Synchronization {
 
     async createBrowser(){
         this.BROWSER = await puppeteer.launch({
-            headless: true,
+            headless: "new",
             args: ['--use-gl=egl','--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
             defaultViewport: { width: 1920, height: 1080},
         });
@@ -75,8 +75,8 @@ class Synchronization {
                 await this.getDispatchOrMailInfo().then(async ()=>{
                     this.dispatchOrMailInfoMain();
                     await this.downloadAttachmentFile();
-                    this.PAGE.close();
-                    this.BROWSER.close();
+                    await this.PAGE.close();
+                    await this.BROWSER.close();
                 });
             }
         }, 10000)
