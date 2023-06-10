@@ -80,7 +80,7 @@ class Synchronization {
                     });
                 }
             });
-        }, 10000)
+        }, 15000)
     }
 
     async inputInfo(){
