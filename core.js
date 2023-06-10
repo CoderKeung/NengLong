@@ -120,7 +120,7 @@ class Synchronization {
             return {x,y,width,height};
         }).then(async (clip)=>{
             console.log(clip)
-            await this.PAGE.screenshot({path: 'ValidateCode.png', clip:{x: clip.x + 50, y: clip.y, width: 50, height: 20}})
+            await this.PAGE.screenshot({path: 'ValidateCode.png', clip:{x: clip.x + 40, y: clip.y, width: 50, height: 20}})
             createWorker({
                 langPath: path.join(__dirname, "lang-data")
             }).then(async (worker)=>{
