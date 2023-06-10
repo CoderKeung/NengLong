@@ -1,8 +1,8 @@
 $("#update").click(()=>{
     $.get(
         "/update",
-        ()=>{
-            location.reload();
+        (data)=>{
+            console.log(data)
         }
     )
 })

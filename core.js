@@ -18,6 +18,7 @@ class Synchronization {
     DispatchOrMailInfoFileArray = JSON.parse(fs.readFileSync(path.join(__dirname, this.DispatchOrMailInfoJsonFile)))
     NewDispatchStartKey = -1;
     SUCCESS = false;
+    OVER = false;
 
     DownloadFunction = `
     function downFile(url, fileName) {
@@ -55,9 +56,17 @@ class Synchronization {
         })
     }
 
+    async start() {
+        this.OVER = false
+        await this.login()
+        do {
+            await new Promise(r => setTimeout(r, 500));
+        } while (!this.OVER)
+    }
+
     async login() {
         await this.createBrowser();
-        console.log("打开浏览器……等待15s……")
+        await console.log("打开浏览器……等待15s……")
         const loginTimer = setInterval(async ()=>{
             console.log("打开页面……")
             this.ValidateCode = "";
@@ -80,6 +89,7 @@ class Synchronization {
                         });
                         this.BROWSER.close().then(()=>{
                             console.log("关闭浏览器")
+                            this.OVER = true;
                         });
                     });
                 }
