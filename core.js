@@ -44,7 +44,7 @@ class Synchronization {
 
     async createBrowser(){
         this.BROWSER = await puppeteer.launch({
-            headless: 'new',
+            headless: false,
             args: ['--use-gl=egl','--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
             defaultViewport: { width: 1920, height: 1080},
         });
@@ -135,7 +135,7 @@ class Synchronization {
     }
 
     async getDispatchOrMailInfo() {
-        await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
+        await this.goto(this.PAGE,`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
         this.SUCCESS = true;
         await new Promise(r => setTimeout(r, 2000));
         const $ = cheerio.load( await this.PAGE.evaluate(()=>{
@@ -207,19 +207,25 @@ class Synchronization {
     }
 
     async openDispatch(page, dispatchId) {
-        await page.goto(`https://jxoa.jxt189.com/jascx/CommonForm/DispatchView.aspx?formId=${dispatchId}`)
+        await this.goto(page, `https://jxoa.jxt189.com/jascx/CommonForm/DispatchView.aspx?formId=${dispatchId}`)
         await this.PAGE.on('dialog', async dialog => {
             await dialog.accept();
         })
         await new Promise(r => setTimeout(r, 2000));
     }
     async openMail(page, mailID) {
-        await page.goto(`https://jxoa.jxt189.com/jascx/InternalMail/View.aspx?mailId=${mailID}`)
+        await this.goto(page,`https://jxoa.jxt189.com/jascx/InternalMail/View.aspx?mailId=${mailID}`)
         await new Promise(r => setTimeout(r, 2000));
     }
-    
+    async goto(page, link) {
+        return page.evaluate((link) => {
+            location.href = link;
+        }, link);
+    }
+
     async downloadDispatchFile(page, dispatchId, dispatchDate, dispatchName ) {
-        page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoad.aspx?formId=DownLoadAll.aspx?formId=${dispatchId}","${dispatchDate}${dispatchName}.zip")`)
+        //page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoad.aspx?formId=DownLoadAll.aspx?formId=${dispatchId}","${dispatchDate}${dispatchName}.zip")`)
+        await this.goto(page, `https://jxoa.jxt189.com/jascx/CommonForm/DownLoadAll.aspx?formId=${dispatchId}`)
         console.log("正在下载文件："+dispatchName)
         await new Promise(r => setTimeout(r, 3000));
     }
