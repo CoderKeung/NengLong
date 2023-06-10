@@ -74,8 +74,9 @@ class Synchronization {
                     await this.getDispatchOrMailInfo().then(async ()=>{
                         this.dispatchOrMailInfoMain();
                         await this.downloadAttachmentFile();
-                        await this.PAGE.close();
-                        await this.BROWSER.close();
+                        const pageClose = await this.PAGE.close();
+                        const browserClose = await this.BROWSER.close();
+                        await console.log(pageClose, browserClose)
                     });
                 }
             });
