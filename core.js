@@ -44,7 +44,7 @@ class Synchronization {
 
     async createBrowser(){
         this.BROWSER = await puppeteer.launch({
-            headless: "new",
+            headless: false,
             args: ['--use-gl=egl','--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
             defaultViewport: { width: 1920, height: 1080},
         });
@@ -120,7 +120,7 @@ class Synchronization {
             return {x,y,width,height};
         }).then(async (clip)=>{
             console.log(clip)
-            await this.PAGE.screenshot({path: 'ValidateCode.png', clip:{x: clip.x + 40, y: clip.y, width: 50, height: 20}})
+            await this.PAGE.screenshot({path: 'ValidateCode.png', clip:{x: clip.x + 50, y: clip.y, width: 50, height: 20}})
             createWorker({
                 langPath: path.join(__dirname, "lang-data")
             }).then(async (worker)=>{
@@ -150,7 +150,7 @@ class Synchronization {
                 date: dispatchInfo[2],
                 time: dispatchInfo[3],
                 type: dispatchInfo[1],
-                file: `${this.FileSavePath}/${aTageElementArrayItem.children[0].data}.zip`
+                file: `${dispatchInfo[2]}${aTageElementArrayItem.children[0].data}.zip`
             })
         }
     }
@@ -159,8 +159,7 @@ class Synchronization {
         this.NewDispatchStartKey = -1;
         for (const key in this.DispatchOrMailInfoFileArray) {
             if (this.DispatchOrMailInfoArray[key].id === this.DispatchOrMailInfoFileArray[this.DispatchOrMailInfoFileArray.length - 1].id) {
-                this.NewDispatchStartKey = key === 0 ? key : key - 1;
-                break;
+                this.NewDispatchStartKey = key - 1;
             }
         }
     }
@@ -220,9 +219,9 @@ class Synchronization {
     }
     
     async downloadDispatchFile(page, dispatchId, dispatchDate, dispatchName ) {
-        await page.evaluate(`${this.DownloadFunction};downFile("DownLoadAll.aspx?formId=${dispatchId}","${dispatchDate}${dispatchName}.zip")`)
+        page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoad.aspx?formId=DownLoadAll.aspx?formId=${dispatchId}","${dispatchDate}${dispatchName}.zip")`)
         console.log("正在下载文件："+dispatchName)
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 3000));
     }
 
     async downloadMailFile(page, mailDate, mailName){
@@ -235,7 +234,7 @@ class Synchronization {
                 }
                 `)
         console.log("正在下载文件："+mailName)
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 3000));
     }
 
     async downloadAttachmentFile(){
@@ -243,6 +242,7 @@ class Synchronization {
         for (let key = this.NewDispatchStartKey; key >= 0; key--) {
             if (this.DispatchOrMailInfoArray[key].type === "收文签收") {
                 await this.openDispatch(this.PAGE, this.DispatchOrMailInfoArray[key].id)
+                console.log(this.DispatchOrMailInfoArray[key])
                 await this.downloadDispatchFile(
                     this.PAGE,
                     this.DispatchOrMailInfoArray[key].id,

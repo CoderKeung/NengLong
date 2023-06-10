@@ -6,15 +6,36 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title><%= title %></title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="main">
-    <div id="update">
-        <span>手动更新</span>
+    <div class="header">
+        <div id="update" class="submitBtn">
+            <span>手动更新</span>
+        </div>
+        <div class="title">堆子前平安希望小学上级来文存档</div>
     </div>
-    <% list.forEach(function(b){ %>
-        <div><span><%- b.date + " " + b.time + " " + b.name + " " + b.type %></span></div>
-    <%})%>
+
+    <% for (var i = list.length - 1; i >= 0; i--) { %>
+            <div class="item">
+                <div class="itemInfo">
+                    <div class="itemInfoDate"><span><%-list[i].date%></span></div>
+                    <div class="itemInfoTime"><span><%-list[i].time%></span></div>
+                    <div class="itemInfoType">
+                        <% if (list[i].type === "邮件") { %>
+                            <span class="itemMail"><%- list[i].type%></span>
+                        <% } else { %>
+                           <span class="itemDispatch"><%- list[i].type%></span>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="itemLink">
+                    <a href="<%-list[i].file%>" class="itemInfoNameTagA"><span class="itemInfoName"><%-list[i].name%></span></a>
+                </div>
+            </div>
+
+    <%}%>
 </div>
 </body>
 <script src="jquery.min.js"></script>
