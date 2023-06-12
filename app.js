@@ -19,9 +19,14 @@ app.get('/', function (req, res) {
 
 app.get('/update', (req, res) => {
     const Synchronization= new Core.Synchronization()
-    Synchronization.start().then(()=>{
-        res.send("OK")
-    });
+    try {
+        Synchronization.start().then(()=>{
+            res.send("OK")
+        });
+    } catch (error) {
+        console.log(error)
+        res.send(error)
+    }
 })
 
 app.get('/data', (req, res)=>{
