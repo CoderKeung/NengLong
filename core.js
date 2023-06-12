@@ -70,17 +70,12 @@ class Synchronization {
     }
 
     async login() {
-        try {
             await this.createBrowser();
             await console.log("打开浏览器……等待15s……")
-        } catch(error) {
-            console.log(error)
-        }
-        try {
             const loginTimer = setInterval(async ()=>{
                 console.log("打开页面……")
                 this.ValidateCode = "";
-                await this.goto(this.PAGE, this.MainUrl,{
+                await this.PAGE.goto(this.MainUrl,{
                     waitUntil: 'networkidle0'
                 })
                 await this.identificationVerificationCode();
@@ -91,7 +86,7 @@ class Synchronization {
                 this.inputInfo().then(async ()=>{
                     if (this.SUCCESS) {
                         clearInterval(loginTimer)
-                        await this.getDispatchOrMailInfo().then(async ()=>{
+                        this.getDispatchOrMailInfo().then(async ()=>{
                             this.setNewDispatchStartKey();
                             this.downloadAttachmentFile().then(()=>{
                                 this.dispatchOrMailInfoMain();
@@ -107,10 +102,6 @@ class Synchronization {
                     }
                 });
             }, 15000)
-        } catch(error) {
-            console.log(error)
-        }
-
     }
 
     async inputInfo(){
@@ -151,7 +142,7 @@ class Synchronization {
     }
 
     async getDispatchOrMailInfo() {
-        await this.goto(this.PAGE, `https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
+        await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
         this.SUCCESS = true;
         await new Promise(r => setTimeout(r, 2000));
         const $ = cheerio.load( await this.PAGE.evaluate(()=>{
@@ -222,14 +213,14 @@ class Synchronization {
     }
 
     async openDispatch(page, dispatchId) {
-        await this.goto(page, `https://jxoa.jxt189.com/jascx/CommonForm/DispatchView.aspx?formId=${dispatchId}`)
+        this.PAGE.goto(`https://jxoa.jxt189.com/jascx/CommonForm/DispatchView.aspx?formId=${dispatchId}`)
         await this.PAGE.on('dialog', async dialog => {
             await dialog.accept();
         })
         await new Promise(r => setTimeout(r, 2000));
     }
     async openMail(page, mailID) {
-        await this.goto(page,`https://jxoa.jxt189.com/jascx/InternalMail/View.aspx?mailId=${mailID}`)
+        this.PAGE.goto(`https://jxoa.jxt189.com/jascx/InternalMail/View.aspx?mailId=${mailID}`)
         await new Promise(r => setTimeout(r, 2000));
     }
 
