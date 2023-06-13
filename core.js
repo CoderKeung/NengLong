@@ -3,6 +3,7 @@ const cheerio = require("cheerio")
 const fs = require("fs")
 const path = require("path")
 const { createWorker } = require("tesseract.js")
+const TimeoutError = puppeteer.TimeoutError
 
 class Synchronization {
     FileSavePath= "files"
@@ -14,11 +15,12 @@ class Synchronization {
     ValidateImage = "ValidateCode.png"
     BROWSER = {};
     PAGE = {};
+    WORKER = {};
     DispatchOrMailInfoArray = [];
     DispatchOrMailInfoFileArray = JSON.parse(fs.readFileSync(path.join(__dirname, this.DispatchOrMailInfoJsonFile)))
     NewDispatchStartKey = -1;
-    SUCCESS = false;
-    OVER = false;
+    // SUCCESS = false;
+    // OVER = false;
 
     DownloadFunction = `
     function downFile(url, fileName) {
@@ -35,6 +37,7 @@ class Synchronization {
         x.send()}
     `
     constructor() {}
+
     extraIdFromUrl(url) {
         return url.substring(url.indexOf("=") + 1, url.lastIndexOf("'"))
     }
@@ -51,7 +54,7 @@ class Synchronization {
         this.BROWSER = await puppeteer.launch({
             headless: 'new',
             args: ['--use-gl=egl','--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
-            defaultViewport: { width: 1920, height: 1080},
+            //defaultViewport: { width: 1920, height: 1080},
         });
         this.PAGE = await this.BROWSER.newPage();
         const client = await this.PAGE.target().createCDPSession()
@@ -59,17 +62,99 @@ class Synchronization {
             behavior: 'allow',
             downloadPath: path.join(__dirname,this.FileSavePath),
         })
-    }
-
-    async start() {
-        this.OVER = false
-        await this.login()
-        do {
-            await new Promise(r => setTimeout(r, 500));
-        } while (!this.OVER)
+        this.WORKER = await createWorker({
+            langPath: path.join(__dirname, "lang-data")
+        });
+        await this.WORKER.loadLanguage("eng");
+        await this.WORKER.initialize('eng');
     }
 
     async login() {
+        await this.createBrowser();
+        await this.userLogin().then(async ()=>{
+            try {
+                await this.getDispatchOrMailInfo().then( async ()=>{
+                    this.setNewDispatchStartKey();
+                    try {
+                        await this.downloadAttachmentFile().then(()=>{
+                            this.dispatchOrMailInfoMain()
+                            this.PAGE.close().then(()=>{
+                                console.log("关闭页面")
+                            });
+                            this.BROWSER.close().then(()=>{
+                                console.log("关闭浏览器")
+                            });
+                        })
+                    } catch (e) {
+                        console.log(e)
+                    }
+                });
+            } catch (e) {
+                console.log(e)
+            }
+        })
+    }
+
+    async getDispatchOrMailInfo() {
+        await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`, {waitUntil: 'load'})
+        const $ = cheerio.load( await this.PAGE.evaluate( ()=> {
+            return $("#dtg_Data").html().replace(/[\r\n\t]/g,"");
+        }));
+        const aTageElementArray = $("a").slice(0,20);
+        console.log("开始获取消息列表数据……")
+        for (const aTageElementArrayItem of aTageElementArray) {
+            const dispatchInfo = this.spliceString(aTageElementArrayItem.parent.prev.data)
+            this.DispatchOrMailInfoArray.push({
+                id: this.extraIdFromUrl(aTageElementArrayItem.attribs.onclick),
+                name: aTageElementArrayItem.children[0].data,
+                date: dispatchInfo[2],
+                time: dispatchInfo[3],
+                type: dispatchInfo[1],
+                file: `${dispatchInfo[2]}${aTageElementArrayItem.children[0].data}.zip`
+            })
+            console.log(this.DispatchOrMailInfoArray.length)
+        }
+    }
+
+    async userLogin() {
+            await this.PAGE.goto(this.MainUrl, {
+                waitUntil: 'load'
+            })
+            await this.PAGE.type('#txt_Account_Input',this.ACCOUNT);
+            await this.PAGE.type('#txt_Password',this.PASSWORD);
+            const ImageValidateCode = await this.PAGE.$(".ImageValidateCode")
+            ImageValidateCode.screenshot({path: "./1.png"}).then(async ()=>{
+                const { data: { text } } = await this.WORKER.recognize("./1.png");
+                await this.PAGE.type('#txt_ValidateCode', text);
+            })
+            try {
+                await this.PAGE.waitForNavigation({
+                    timeout: 5000
+                }).then(async ()=>{
+                    try {
+                        await this.PAGE.waitForSelector("#link_MessageAlertNewLink", {
+                            timeout: 5000
+                        }).then(()=>{
+                            console.log("登录成功")
+                        });
+                    } catch (e) {
+                        if (e instanceof TimeoutError) {
+                            console.log("重新登录")
+                            await this.userLogin()
+                        }
+                    }
+
+                });
+            } catch (e) {
+                if (e instanceof TimeoutError) {
+                    console.log("登录失败")
+                    await this.userLogin()
+                }
+            }
+    }
+
+    /*
+    async loginBack() {
             await this.createBrowser();
             await console.log("打开浏览器……等待15s……")
             const loginTimer = setInterval(async ()=>{
@@ -102,6 +187,14 @@ class Synchronization {
                     }
                 });
             }, 15000)
+    }
+
+    async start() {
+        this.OVER = false
+        await this.login()
+        do {
+            await new Promise(r => setTimeout(r, 500));
+        } while (!this.OVER)
     }
 
     async inputInfo(){
@@ -141,8 +234,8 @@ class Synchronization {
         })
     }
 
-    async getDispatchOrMailInfo() {
-        await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`)
+    async getDispatchOrMailInfoBack() {
+        await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`, {waitUntil: 'load'})
         this.SUCCESS = true;
         await new Promise(r => setTimeout(r, 2000));
         const $ = cheerio.load( await this.PAGE.evaluate(()=>{
@@ -161,17 +254,27 @@ class Synchronization {
             })
         }
     }
+     */
 
     setNewDispatchStartKey(){
         this.NewDispatchStartKey = -1;
-        for (const key in this.DispatchOrMailInfoFileArray) {
+        console.log("查找最新下标……")
+        if (this.DispatchOrMailInfoFileArray.length === 0) {
+            this.NewDispatchStartKey = this.DispatchOrMailInfoArray.length - 1;
+        }
+        for (let key = 0; key < this.DispatchOrMailInfoArray.length && this.DispatchOrMailInfoFileArray.length !== 0; key--) {
+            console.log(key)
+            console.log(this.DispatchOrMailInfoArray[key].name)
             if (this.DispatchOrMailInfoArray[key].id === this.DispatchOrMailInfoFileArray[this.DispatchOrMailInfoFileArray.length - 1].id) {
                 this.NewDispatchStartKey = key - 1;
+                console.log(this.NewDispatchStartKey)
+                break;
             }
         }
     }
 
     updateDispatchOrMailInfoToJsonFile() {
+        console.log("更新数据中……")
         for (let key = this.NewDispatchStartKey; key >= 0; key--){
             this.DispatchOrMailInfoFileArray.push({
                 id: this.DispatchOrMailInfoArray[key].id,
@@ -182,6 +285,7 @@ class Synchronization {
                 file: this.DispatchOrMailInfoArray[key].file
             })
         }
+        console.log("写入数据中……")
         fs.writeFile(path.join(__dirname, this.DispatchOrMailInfoJsonFile), JSON.stringify(this.DispatchOrMailInfoFileArray, null, 4), (err) => {
             if (err) { throw err; }
             console.log("更新数据!");
@@ -201,6 +305,7 @@ class Synchronization {
     }
 
     dispatchOrMailInfoMain(){
+        console.log("判断是否需要更新……")
         if (this.DispatchOrMailInfoFileArray.length === 0) {
             this.writeDispatchOrMailInfoToJsonFile();
         } else {

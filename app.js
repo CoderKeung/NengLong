@@ -20,7 +20,7 @@ app.get('/', function (req, res) {
 app.get('/update', (req, res) => {
     const Synchronization= new Core.Synchronization()
     try {
-        Synchronization.start().then(()=>{
+        Synchronization.login().then(()=>{
             res.send("OK")
         });
     } catch (error) {
@@ -40,7 +40,7 @@ rule.minute = 0;
 rule.second = 0;
 let job = schedule.scheduleJob(rule, () => {
     const Synchronization= new Core.Synchronization()
-    Synchronization.start().then(()=>{
+    Synchronization.login().then(()=>{
         console.log(new Date() + ": 定时任务执行。")
     });
 });
