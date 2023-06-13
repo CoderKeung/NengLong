@@ -4,6 +4,7 @@ const fs = require("fs")
 const path = require("path")
 const { createWorker } = require("tesseract.js")
 const TimeoutError = puppeteer.TimeoutError
+const chalk = require('chalk');
 
 class Synchronization {
     FileSavePath= "files"
@@ -56,7 +57,9 @@ class Synchronization {
             args: ['--use-gl=egl','--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
             //defaultViewport: { width: 1920, height: 1080},
         });
-        this.PAGE = await this.BROWSER.newPage();
+        console.log(chalk.yellow("创建浏览器"), "")
+        this.PAGE = await this.BROWSER.newPage()
+        console.log(chalk.yellow("创建页面"), "")
         const client = await this.PAGE.target().createCDPSession()
         await client.send('Page.setDownloadBehavior', {
             behavior: 'allow',
@@ -79,10 +82,10 @@ class Synchronization {
                         await this.downloadAttachmentFile().then(()=>{
                             this.dispatchOrMailInfoMain()
                             this.PAGE.close().then(()=>{
-                                console.log("关闭页面")
+                                console.log(chalk.red("关闭页面"))
                             });
                             this.BROWSER.close().then(()=>{
-                                console.log("关闭浏览器")
+                                console.log(chalk.red("关闭浏览器"))
                             });
                         })
                     } catch (e) {
@@ -96,12 +99,13 @@ class Synchronization {
     }
 
     async getDispatchOrMailInfo() {
+        console.log(chalk.yellow("前往消息列表"))
         await this.PAGE.goto(`https://jxoa.jxt189.com/jascx/Message/MessageAlertHistory.aspx`, {waitUntil: 'load'})
         const $ = cheerio.load( await this.PAGE.evaluate( ()=> {
             return $("#dtg_Data").html().replace(/[\r\n\t]/g,"");
         }));
         const aTageElementArray = $("a").slice(0,20);
-        console.log("开始获取消息列表数据……")
+        console.log(chalk.yellow("开始获取消息列表数据"))
         for (const aTageElementArrayItem of aTageElementArray) {
             const dispatchInfo = this.spliceString(aTageElementArrayItem.parent.prev.data)
             this.DispatchOrMailInfoArray.push({
@@ -112,7 +116,6 @@ class Synchronization {
                 type: dispatchInfo[1],
                 file: `${dispatchInfo[2]}${aTageElementArrayItem.children[0].data}.zip`
             })
-            console.log(this.DispatchOrMailInfoArray.length)
         }
     }
 
@@ -120,14 +123,17 @@ class Synchronization {
             await this.PAGE.goto(this.MainUrl, {
                 waitUntil: 'load'
             })
+            await console.log(chalk.yellow("进入登录页面"))
             await this.PAGE.type('#txt_Account_Input',this.ACCOUNT);
             await this.PAGE.type('#txt_Password',this.PASSWORD);
             const ImageValidateCode = await this.PAGE.$(".ImageValidateCode")
             ImageValidateCode.screenshot({path: "./1.png"}).then(async ()=>{
                 const { data: { text } } = await this.WORKER.recognize("./1.png");
+                console.log(chalk.yellow("验证码：") + chalk.green.bold(text))
                 await this.PAGE.type('#txt_ValidateCode', text);
             })
             try {
+                console.log(chalk.yellow("开始登录"))
                 await this.PAGE.waitForNavigation({
                     timeout: 5000
                 }).then(async ()=>{
@@ -135,11 +141,11 @@ class Synchronization {
                         await this.PAGE.waitForSelector("#link_MessageAlertNewLink", {
                             timeout: 5000
                         }).then(()=>{
-                            console.log("登录成功")
+                            console.log(chalk.green.bold("登录成功"))
                         });
                     } catch (e) {
                         if (e instanceof TimeoutError) {
-                            console.log("重新登录")
+                            console.log(chalk.red("重新登录"))
                             await this.userLogin()
                         }
                     }
@@ -147,7 +153,7 @@ class Synchronization {
                 });
             } catch (e) {
                 if (e instanceof TimeoutError) {
-                    console.log("登录失败")
+                    console.log(chalk.red("重新登录"))
                     await this.userLogin()
                 }
             }
@@ -258,21 +264,19 @@ class Synchronization {
 
     setNewDispatchStartKey(){
         this.NewDispatchStartKey = -1;
-        console.log("查找最新下标……")
         if (this.DispatchOrMailInfoFileArray.length === 0) {
             this.NewDispatchStartKey = this.DispatchOrMailInfoArray.length - 1;
         }
         for (let key = 0; key < this.DispatchOrMailInfoArray.length && this.DispatchOrMailInfoFileArray.length !== 0; key++) {
             if (this.DispatchOrMailInfoArray[key].id === this.DispatchOrMailInfoFileArray[this.DispatchOrMailInfoFileArray.length - 1].id) {
                 this.NewDispatchStartKey = key - 1;
-                console.log(this.NewDispatchStartKey)
                 break;
             }
         }
     }
 
     updateDispatchOrMailInfoToJsonFile() {
-        console.log("更新数据中……")
+        console.log(chalk.yellow("更新数据"))
         for (let key = this.NewDispatchStartKey; key >= 0; key--){
             this.DispatchOrMailInfoFileArray.push({
                 id: this.DispatchOrMailInfoArray[key].id,
@@ -283,34 +287,34 @@ class Synchronization {
                 file: this.DispatchOrMailInfoArray[key].file
             })
         }
-        console.log("写入数据中……")
+        console.log(chalk.yellow("写入数据文件"))
         fs.writeFile(path.join(__dirname, this.DispatchOrMailInfoJsonFile), JSON.stringify(this.DispatchOrMailInfoFileArray, null, 4), (err) => {
             if (err) { throw err; }
-            console.log("更新数据!");
+            console.log(chalk.green.bold("数据写入成功"))
         });
     }
 
     writeDispatchOrMailInfoToJsonFile(){
         let temporaryArray = [];
+        console.log(chalk.yellow("全新写入"))
         for (let key = this.DispatchOrMailInfoArray.length - 1; key >=  0; key--) {
             temporaryArray.push(this.DispatchOrMailInfoArray[key]);
         }
         fs.writeFile(path.join(__dirname, this.DispatchOrMailInfoJsonFile), JSON.stringify(temporaryArray, null, 4), (err) => {
             if (err) { throw err; }
-            console.log("写入新数据");
+            console.log(chalk.green.bold("数据写入成功"))
         });
         this.NewDispatchStartKey = this.DispatchOrMailInfoArray.length - 1
     }
 
     dispatchOrMailInfoMain(){
-        console.log("判断是否需要更新……")
         if (this.DispatchOrMailInfoFileArray.length === 0) {
             this.writeDispatchOrMailInfoToJsonFile();
         } else {
             if (this.NewDispatchStartKey !== -1) {
                 this.updateDispatchOrMailInfoToJsonFile();
             } else {
-                console.log("不需要更新！")
+                console.log(chalk.green.bold("不需要更新！"))
             }
         }
     }
@@ -329,7 +333,7 @@ class Synchronization {
 
     async downloadDispatchFile(page, dispatchId, dispatchDate, dispatchName ) {
         page.evaluate(`${this.DownloadFunction};downFile("https://jxoa.jxt189.com/jascx/CommonForm/DownLoadALL.aspx?formId=${dispatchId}","1.zip")`)
-        console.log("正在下载文件："+dispatchName)
+        console.log(chalk.yellow("正在下载文件："+dispatchName))
         await new Promise(r => setTimeout(r, 3000));
         fs.rename(path.join(__dirname, "files/1.zip"), path.join(__dirname, `files/${dispatchDate}${dispatchName}.zip`), ()=>{})
     }
@@ -343,7 +347,7 @@ class Synchronization {
                     downFile("https://jxoa.jxt189.com/jascx/InternalMail/DownLoadAll.aspx?id="+mailId,"${mailDate}${mailName}.zip")
                 }
                 `)
-        console.log("正在下载文件："+mailName)
+        console.log(chalk.yellow("正在下载文件："+mailName))
         await new Promise(r => setTimeout(r, 3000));
     }
 
