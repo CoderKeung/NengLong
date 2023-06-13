@@ -262,9 +262,7 @@ class Synchronization {
         if (this.DispatchOrMailInfoFileArray.length === 0) {
             this.NewDispatchStartKey = this.DispatchOrMailInfoArray.length - 1;
         }
-        for (let key = 0; key < this.DispatchOrMailInfoArray.length && this.DispatchOrMailInfoFileArray.length !== 0; key--) {
-            console.log(key)
-            console.log(this.DispatchOrMailInfoArray[key].name)
+        for (let key = 0; key < this.DispatchOrMailInfoArray.length && this.DispatchOrMailInfoFileArray.length !== 0; key++) {
             if (this.DispatchOrMailInfoArray[key].id === this.DispatchOrMailInfoFileArray[this.DispatchOrMailInfoFileArray.length - 1].id) {
                 this.NewDispatchStartKey = key - 1;
                 console.log(this.NewDispatchStartKey)
